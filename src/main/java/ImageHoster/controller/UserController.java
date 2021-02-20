@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpSession;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @Controller
@@ -29,18 +31,31 @@ public class UserController {
     //Sets the user profile with UserProfile type object
     //Adds User type object to a model and returns 'users/registration.html' file
     @RequestMapping("users/registration")
-    public String registration(Model model) {
+    public String registration(Model model, HttpSession session) {
         User user = new User();
         UserProfile profile = new UserProfile();
         user.setProfile(profile);
         model.addAttribute("User", user);
+        model.addAttribute("passwordTypeError", session.getAttribute("passwordTypeError"));
+        session.removeAttribute("passwordTypeError");
         return "users/registration";
     }
 
     //This controller method is called when the request pattern is of type 'users/registration' and also the incoming request is of POST type
     //This method calls the business logic and after the user record is persisted in the database, directs to login page
     @RequestMapping(value = "users/registration", method = RequestMethod.POST)
-    public String registerUser(User user) {
+    public String registerUser(User user, HttpSession session) {
+        String password = user.getPassword();
+        //Check atleast 1 character among a-z and A-Z and 0-9
+        boolean isAlphanumeric = password.matches("([A-Z])+([a-z])+([0-9])+");
+
+        //Check also it contains atleast one special character
+        boolean isSpecialCharacter = password.matches("[^a-zA-Z0-9]+");
+
+        if (!(isAlphanumeric && isSpecialCharacter)) {
+            session.setAttribute("passwordTypeError", true);
+            return "redirect:/users/registration";
+        }
         userService.registerUser(user);
         return "redirect:/users/login";
     }

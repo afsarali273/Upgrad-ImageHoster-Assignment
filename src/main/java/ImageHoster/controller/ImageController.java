@@ -53,6 +53,21 @@ public class ImageController {
         return "images/image";
     }
 
+    /**
+     * This method is used for retrieving image details based on the image id
+     * @param id
+     * @param model
+     * @return
+     */
+
+    @RequestMapping("/images/{id}/{title}")
+    public String showImageWithImageId(@PathVariable("id") String id, Model model) {
+        Image image = imageService.getImage(Integer.parseInt(id));
+        model.addAttribute("image", image);
+        model.addAttribute("tags", image.getTags());
+        return "images/image";
+    }
+
     //This controller method is called when the request pattern is of type 'images/upload'
     //The method returns 'images/upload.html' file
     @RequestMapping("/images/upload")

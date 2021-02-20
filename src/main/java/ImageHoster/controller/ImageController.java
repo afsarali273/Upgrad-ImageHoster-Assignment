@@ -61,10 +61,16 @@ public class ImageController {
      */
 
     @RequestMapping("/images/{id}/{title}")
-    public String showImageWithImageId(@PathVariable("id") String id, Model model) {
+    public String showImageWithImageId(@PathVariable("id") String id, Model model , HttpSession session) {
         Image image = imageService.getImage(Integer.parseInt(id));
         model.addAttribute("image", image);
         model.addAttribute("tags", image.getTags());
+        model.addAttribute("editError",session.getAttribute("editError"));
+        model.addAttribute("deleteError",session.getAttribute("deleteError"));
+
+        //After Error message we need to remove session value of error message
+        session.removeAttribute("deleteError");
+        session.removeAttribute("editError");
         return "images/image";
     }
 
@@ -107,9 +113,17 @@ public class ImageController {
     //The method first needs to convert the list of all the tags to a string containing all the tags separated by a comma and then add this string in a Model type object
     //This string is then displayed by 'edit.html' file as previous tags of an image
     @RequestMapping(value = "/editImage")
-    public String editImage(@RequestParam("imageId") Integer imageId, Model model) {
+    public String editImage(@RequestParam("imageId") Integer imageId, Model model,HttpSession session) {
         Image image = imageService.getImage(imageId);
+        User user = (User) session.getAttribute("loggeduser");
 
+        if(user.getUsername().equals(image.getUser().getUsername())){
+            session.setAttribute("editError",false);
+
+        }else{
+            session.setAttribute("editError",true);
+            return "redirect:/images/"+image.getId()+"/"+image.getTitle();
+        }
         String tags = convertTagsToString(image.getTags());
         model.addAttribute("image", image);
         model.addAttribute("tags", tags);
@@ -128,9 +142,11 @@ public class ImageController {
     //The method also receives tags parameter which is a string of all the tags separated by a comma using the annotation @RequestParam
     //The method converts the string to a list of all the tags using findOrCreateTags() method and sets the tags attribute of an image as a list of all the tags
     @RequestMapping(value = "/editImage", method = RequestMethod.PUT)
-    public String editImageSubmit(@RequestParam("file") MultipartFile file, @RequestParam("imageId") Integer imageId, @RequestParam("tags") String tags, Image updatedImage, HttpSession session) throws IOException {
+    public String editImageSubmit(@RequestParam("file") MultipartFile file, @RequestParam("imageId") Integer imageId, @RequestParam("tags") String tags, Image updatedImage,HttpSession session) throws IOException {
 
         Image image = imageService.getImage(imageId);
+        User user = (User) session.getAttribute("loggeduser");
+
         String updatedImageData = convertUploadedFileToBase64(file);
         List<Tag> imageTags = findOrCreateTags(tags);
 
@@ -141,13 +157,13 @@ public class ImageController {
         }
 
         updatedImage.setId(imageId);
-        User user = (User) session.getAttribute("loggeduser");
+
         updatedImage.setUser(user);
         updatedImage.setTags(imageTags);
         updatedImage.setDate(new Date());
 
         imageService.updateImage(updatedImage);
-        return "redirect:/images/" + updatedImage.getTitle();
+        return "redirect:/images/"+updatedImage.getId()+"/" + updatedImage.getTitle();
     }
 
 
@@ -155,7 +171,18 @@ public class ImageController {
     //The method calls the deleteImage() method in the business logic passing the id of the image to be deleted
     //Looks for a controller method with request mapping of type '/images'
     @RequestMapping(value = "/deleteImage", method = RequestMethod.DELETE)
-    public String deleteImageSubmit(@RequestParam(name = "imageId") Integer imageId) {
+    public String deleteImageSubmit(@RequestParam(name = "imageId") Integer imageId ,HttpSession session) {
+
+        Image image = imageService.getImage(imageId);
+        User user = (User) session.getAttribute("loggeduser");
+
+        if(user.getUsername().equals(image.getUser().getUsername())){
+            session.setAttribute("deleteError",false);
+        }else{
+            session.setAttribute("deleteError",true);
+            return "redirect:/images/"+image.getId()+"/"+image.getTitle();
+        }
+
         imageService.deleteImage(imageId);
         return "redirect:/images";
     }

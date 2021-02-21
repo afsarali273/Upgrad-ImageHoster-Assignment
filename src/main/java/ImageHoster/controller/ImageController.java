@@ -67,7 +67,7 @@ public class ImageController {
         model.addAttribute("tags", image.getTags());
         model.addAttribute("editError",session.getAttribute("editError"));
         model.addAttribute("deleteError",session.getAttribute("deleteError"));
-
+        model.addAttribute("comments",image.getComments());
         //After Error message we need to remove session value of error message
         session.removeAttribute("deleteError");
         session.removeAttribute("editError");
@@ -171,7 +171,7 @@ public class ImageController {
     //The method calls the deleteImage() method in the business logic passing the id of the image to be deleted
     //Looks for a controller method with request mapping of type '/images'
     @RequestMapping(value = "/deleteImage", method = RequestMethod.DELETE)
-    public String deleteImageSubmit(@RequestParam(name = "imageId") Integer imageId ,HttpSession session) {
+    public String deleteImageSubmit(@RequestParam(name = "imageId") Integer imageId , Model model,HttpSession session) {
 
         Image image = imageService.getImage(imageId);
         User user = (User) session.getAttribute("loggeduser");

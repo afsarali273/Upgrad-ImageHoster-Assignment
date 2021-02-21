@@ -46,13 +46,8 @@ public class UserController {
     @RequestMapping(value = "users/registration", method = RequestMethod.POST)
     public String registerUser(User user, HttpSession session) {
         String password = user.getPassword();
-        //Check atleast 1 character among a-z and A-Z and 0-9
-        boolean isAlphanumeric = password.matches("([A-Z])+([a-z])+([0-9])+");
-
-        //Check also it contains atleast one special character
-        boolean isSpecialCharacter = password.matches("[^a-zA-Z0-9]+");
-
-        if (!(isAlphanumeric && isSpecialCharacter)) {
+        //Check atleast 1 character among a-z and A-Z and 0-9 and 1 special character
+        if (!isValidPassword(password)) {
             session.setAttribute("passwordTypeError", true);
             return "redirect:/users/registration";
         }
@@ -93,5 +88,14 @@ public class UserController {
         List<Image> images = imageService.getAllImages();
         model.addAttribute("images", images);
         return "index";
+    }
+
+    //Checking the valid Password at the time of registration, Password length can vary from 2 to 40
+    public boolean isValidPassword(String password) {
+        String PASSWORD_PATTERN = "((?=.*[a-z])(?=.*\\d)(?=.*[A-Z])(?=.*[@#$%!]).{2,40})";
+        Pattern pattern = Pattern.compile(PASSWORD_PATTERN);
+        Matcher matcher = pattern.matcher(password.trim());
+
+        return matcher.matches();
     }
 }
